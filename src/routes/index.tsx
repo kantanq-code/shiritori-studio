@@ -7,6 +7,9 @@ import {
   type Word,
 } from "@/lib/shiritori";
 
+type Level = Word["level"];
+const ALL_LEVELS: Level[] = ["N5", "N4", "N3"];
+
 export const Route = createFileRoute("/")({
   component: Index,
 });
