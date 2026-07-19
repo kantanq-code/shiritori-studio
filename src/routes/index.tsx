@@ -1,6 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
-import { generateChains, type Word } from "@/lib/shiritori";
+import {
+  generateChains,
+  hasWordsStartingWith,
+  normalizeStartInput,
+  type Word,
+} from "@/lib/shiritori";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -52,14 +57,33 @@ function ChainRow({ chain }: { chain: Word[] }) {
 
 function Index() {
   const [chains, setChains] = useState<Word[][]>([]);
+  const [startInput, setStartInput] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   const shuffle = useCallback(() => {
+    setError(null);
     setChains(generateChains(10, 6));
   }, []);
+
+  const generateWithStart = useCallback(() => {
+    const ch = normalizeStartInput(startInput);
+    if (!ch) {
+      setError("開始文字を入力してください。");
+      return;
+    }
+    if (!hasWordsStartingWith(ch)) {
+      setError(`「${ch}」で始まる語彙が見つかりません。`);
+      return;
+    }
+    setError(null);
+    setChains(generateChains(10, 6, ch));
+  }, [startInput]);
 
   useEffect(() => {
     shuffle();
   }, [shuffle]);
+
+  const hasStart = !!normalizeStartInput(startInput);
 
   return (
     <div
@@ -70,30 +94,75 @@ function Index() {
       }}
     >
       <div className="mx-auto max-w-5xl px-4 py-8 md:py-12">
-        <header className="flex items-end justify-between gap-4 mb-6 md:mb-10 border-b border-[#e6dfd2] pb-4">
-          <div>
-            <h1
-              className="text-3xl md:text-4xl text-[#2a2622] tracking-wide"
+        <header className="flex flex-col gap-4 mb-6 md:mb-10 border-b border-[#e6dfd2] pb-4">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <h1
+                className="text-3xl md:text-4xl text-[#2a2622] tracking-wide"
+                style={{ fontFamily: "'Shippori Mincho', serif" }}
+              >
+                しりとり
+              </h1>
+              <p className="text-xs md:text-sm text-[#8a8378] mt-1">
+                N5〜N3 語彙 · 10 本 × 6 語
+              </p>
+            </div>
+            <button
+              onClick={shuffle}
+              className="px-4 py-2 md:px-5 md:py-2.5 text-sm md:text-base rounded-sm border border-[#2a2622] bg-[#2a2622] text-[#faf6ec] hover:bg-[#3d3830] transition-colors"
               style={{ fontFamily: "'Shippori Mincho', serif" }}
             >
-              しりとり
-            </h1>
-            <p className="text-xs md:text-sm text-[#8a8378] mt-1">
-              N5〜N3 語彙 · 10 本 × 6 語
-            </p>
+              シャッフル
+            </button>
           </div>
-          <button
-            onClick={shuffle}
-            className="px-4 py-2 md:px-5 md:py-2.5 text-sm md:text-base rounded-sm border border-[#2a2622] bg-[#2a2622] text-[#faf6ec] hover:bg-[#3d3830] transition-colors"
-            style={{ fontFamily: "'Shippori Mincho', serif" }}
-          >
-            シャッフル
-          </button>
+
+          <div className="flex flex-wrap items-center gap-2 md:gap-3">
+            <label
+              htmlFor="start-char"
+              className="text-xs md:text-sm text-[#6b6459]"
+              style={{ fontFamily: "'Shippori Mincho', serif" }}
+            >
+              開始文字：
+            </label>
+            <input
+              id="start-char"
+              value={startInput}
+              onChange={(e) => setStartInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") generateWithStart();
+              }}
+              placeholder="例: か"
+              maxLength={4}
+              className="w-24 px-3 py-2 text-base rounded-sm border border-[#c7bda9] bg-[#fdfaf2] text-[#2a2622] focus:outline-none focus:border-[#2a2622]"
+              style={{ fontFamily: "'Shippori Mincho', serif" }}
+            />
+            <button
+              onClick={generateWithStart}
+              disabled={!hasStart}
+              className="px-4 py-2 text-sm md:text-base rounded-sm border border-[#2a2622] bg-[#fdfaf2] text-[#2a2622] hover:bg-[#f0e9d8] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              style={{ fontFamily: "'Shippori Mincho', serif" }}
+            >
+              この文字で生成
+            </button>
+            <button
+              onClick={generateWithStart}
+              disabled={!hasStart}
+              className="px-4 py-2 text-sm md:text-base rounded-sm border border-[#c7bda9] bg-transparent text-[#2a2622] hover:bg-[#f0e9d8] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              style={{ fontFamily: "'Shippori Mincho', serif" }}
+            >
+              別の10本に変える
+            </button>
+            {error && (
+              <span className="text-xs md:text-sm text-[#8a3f2f]">{error}</span>
+            )}
+          </div>
         </header>
 
         <main className="grid grid-cols-1 gap-3 md:gap-4">
           {chains.length === 0 ? (
-            <p className="text-center text-[#8a8378] py-12">生成中…</p>
+            <p className="text-center text-[#8a8378] py-12">
+              {error ? "　" : "生成中…"}
+            </p>
           ) : (
             chains.map((c, i) => <ChainRow key={i} chain={c} />)
           )}

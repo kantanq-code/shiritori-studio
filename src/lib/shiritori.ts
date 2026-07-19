@@ -98,10 +98,18 @@ function shuffleInPlace<T>(arr: T[]): T[] {
   return arr;
 }
 
-// Generate one chain of `length` words
-function generateChain(length: number, maxAttempts = 200): Word[] | null {
+// Generate one chain of `length` words. If `startChar` provided, first word starts with it.
+function generateChain(length: number, maxAttempts = 200, startChar?: string): Word[] | null {
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const chain: Word[] = [pickRandom(usableWords)];
+    let firstWord: Word;
+    if (startChar) {
+      const pool = startIndex.get(startChar);
+      if (!pool || pool.length === 0) return null;
+      firstWord = pickRandom(pool);
+    } else {
+      firstWord = pickRandom(usableWords);
+    }
+    const chain: Word[] = [firstWord];
     const usedKeys = new Set<string>([keyOf(chain[0])]);
     let ok = true;
     for (let i = 1; i < length; i++) {
@@ -126,14 +134,30 @@ function keyOf(w: Word): string {
   return `${w.reading}|${w.kanji ?? ""}`;
 }
 
-export function generateChains(count: number, chainLength = 6): Word[][] {
+export function normalizeStartInput(raw: string): string | null {
+  if (!raw) return null;
+  const n = normalizeReading(raw.trim());
+  if (!n) return null;
+  return n.charAt(0);
+}
+
+export function hasWordsStartingWith(ch: string): boolean {
+  const p = startIndex.get(ch);
+  return !!p && p.length > 0;
+}
+
+export function generateChains(count: number, chainLength = 6, startChar?: string): Word[][] {
   const chains: Word[][] = [];
   const seenChains = new Set<string>();
   let safety = 0;
   while (chains.length < count && safety < count * 50) {
     safety++;
-    const c = generateChain(chainLength);
-    if (!c) continue;
+    const c = generateChain(chainLength, 200, startChar);
+    if (!c) {
+      // if a startChar is set but no chain possible, bail out
+      if (startChar) break;
+      continue;
+    }
     const sig = c.map(keyOf).join("→");
     if (seenChains.has(sig)) continue;
     seenChains.add(sig);
