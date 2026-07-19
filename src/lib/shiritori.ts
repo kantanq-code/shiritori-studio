@@ -1,11 +1,11 @@
 import vocabRaw from "../data/vocab.json";
 
 export type Level = "N5" | "N4" | "N3";
-export type Word = { reading: string; kanji: string | null; level: Level };
+export type Word = { reading: string; kanji: string | null; level: Level; meaning: string };
 
-const vocab: Word[] = (vocabRaw as { r: string; k: string | null; l: Level }[]).map(
-  (v) => ({ reading: v.r, kanji: v.k, level: v.l }),
-);
+const vocab: Word[] = (
+  vocabRaw as { r: string; k: string | null; l: Level; m?: string }[]
+).map((v) => ({ reading: v.r, kanji: v.k, level: v.l, meaning: v.m ?? "" }));
 
 // Katakana → Hiragana
 function kataToHira(s: string): string {
