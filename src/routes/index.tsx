@@ -28,9 +28,6 @@ function WordBlock({ word }: { word: Word }) {
       >
         {word.level}
       </span>
-      <span className="text-[10px] md:text-xs text-[#a89f8f] leading-tight text-center max-w-[7em] line-clamp-2 min-h-[2.2em]">
-        {word.meaning || "\u00A0"}
-      </span>
       <span
         className="text-2xl md:text-3xl leading-tight text-[#2a2622] whitespace-nowrap mt-0.5"
         style={{ fontFamily: "'Shippori Mincho', serif" }}
@@ -39,6 +36,9 @@ function WordBlock({ word }: { word: Word }) {
       </span>
       <span className="text-xs md:text-sm text-[#8a8378] min-h-[1.1em] whitespace-nowrap">
         {word.kanji ?? "\u00A0"}
+      </span>
+      <span className="text-[10px] md:text-xs text-[#a89f8f] leading-tight text-center max-w-[7em] line-clamp-2 min-h-[2.2em]">
+        {word.meaning || "\u00A0"}
       </span>
     </div>
   );
