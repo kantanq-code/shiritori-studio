@@ -7,6 +7,9 @@ import {
   type Word,
 } from "@/lib/shiritori";
 
+type Level = Word["level"];
+const ALL_LEVELS: Level[] = ["N5", "N4", "N3"];
+
 export const Route = createFileRoute("/")({
   component: Index,
 });
@@ -59,11 +62,23 @@ function Index() {
   const [chains, setChains] = useState<Word[][]>([]);
   const [startInput, setStartInput] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [selectedLevels, setSelectedLevels] = useState<Level[]>(ALL_LEVELS);
+
+  const toggleLevel = (lv: Level) => {
+    setSelectedLevels((prev) => {
+      const has = prev.includes(lv);
+      if (has) {
+        if (prev.length === 1) return prev; // keep at least one
+        return prev.filter((l) => l !== lv);
+      }
+      return [...prev, lv];
+    });
+  };
 
   const shuffle = useCallback(() => {
     setError(null);
-    setChains(generateChains(10, 6));
-  }, []);
+    setChains(generateChains(10, 6, undefined, selectedLevels));
+  }, [selectedLevels]);
 
   const generateWithStart = useCallback(() => {
     const ch = normalizeStartInput(startInput);
@@ -71,13 +86,13 @@ function Index() {
       setError("開始文字を入力してください。");
       return;
     }
-    if (!hasWordsStartingWith(ch)) {
-      setError(`「${ch}」で始まる語彙が見つかりません。`);
+    if (!hasWordsStartingWith(ch, selectedLevels)) {
+      setError(`「${ch}」で始まる語彙が選択レベルに見つかりません。`);
       return;
     }
     setError(null);
-    setChains(generateChains(10, 6, ch));
-  }, [startInput]);
+    setChains(generateChains(10, 6, ch, selectedLevels));
+  }, [startInput, selectedLevels]);
 
   useEffect(() => {
     shuffle();
@@ -114,6 +129,33 @@ function Index() {
             >
               シャッフル
             </button>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 md:gap-3">
+            <span
+              className="text-xs md:text-sm text-[#6b6459]"
+              style={{ fontFamily: "'Shippori Mincho', serif" }}
+            >
+              レベル：
+            </span>
+            {ALL_LEVELS.map((lv) => {
+              const active = selectedLevels.includes(lv);
+              return (
+                <button
+                  key={lv}
+                  type="button"
+                  onClick={() => toggleLevel(lv)}
+                  className={`px-3 py-1.5 text-xs md:text-sm rounded-sm border transition-colors ${
+                    active
+                      ? "border-[#2a2622] bg-[#2a2622] text-[#faf6ec]"
+                      : "border-[#c7bda9] bg-transparent text-[#6b6459] hover:bg-[#f0e9d8]"
+                  }`}
+                  style={{ fontFamily: "'Shippori Mincho', serif" }}
+                >
+                  {lv}
+                </button>
+              );
+            })}
           </div>
 
           <div className="flex flex-wrap items-center gap-2 md:gap-3">
