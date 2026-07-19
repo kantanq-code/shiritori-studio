@@ -98,10 +98,18 @@ function shuffleInPlace<T>(arr: T[]): T[] {
   return arr;
 }
 
-// Generate one chain of `length` words
-function generateChain(length: number, maxAttempts = 200): Word[] | null {
+// Generate one chain of `length` words. If `startChar` provided, first word starts with it.
+function generateChain(length: number, maxAttempts = 200, startChar?: string): Word[] | null {
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const chain: Word[] = [pickRandom(usableWords)];
+    let firstWord: Word;
+    if (startChar) {
+      const pool = startIndex.get(startChar);
+      if (!pool || pool.length === 0) return null;
+      firstWord = pickRandom(pool);
+    } else {
+      firstWord = pickRandom(usableWords);
+    }
+    const chain: Word[] = [firstWord];
     const usedKeys = new Set<string>([keyOf(chain[0])]);
     let ok = true;
     for (let i = 1; i < length; i++) {
