@@ -1,24 +1,108 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useCallback, useEffect, useState } from "react";
+import { generateChains, type Word } from "@/lib/shiritori";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
+const LEVEL_STYLES: Record<Word["level"], string> = {
+  N5: "bg-[#e6efe3] text-[#4a6a3f] border-[#c9d8c1]",
+  N4: "bg-[#f3ead1] text-[#7a5f1f] border-[#e2d5a8]",
+  N3: "bg-[#f1dcd6] text-[#8a3f2f] border-[#e0bfb5]",
+};
+
+function WordBlock({ word }: { word: Word }) {
+  return (
+    <div className="flex flex-col items-center gap-1.5 min-w-0">
+      <span
+        className={`px-2 py-0.5 text-[10px] font-semibold tracking-wider rounded-sm border ${LEVEL_STYLES[word.level]}`}
+      >
+        {word.level}
+      </span>
+      <span
+        className="text-2xl md:text-3xl leading-tight text-[#2a2622] whitespace-nowrap"
+        style={{ fontFamily: "'Shippori Mincho', serif" }}
+      >
+        {word.reading}
+      </span>
+      <span className="text-xs md:text-sm text-[#8a8378] min-h-[1.1em] whitespace-nowrap">
+        {word.kanji ?? "\u00A0"}
+      </span>
+    </div>
+  );
+}
+
+function ChainRow({ chain }: { chain: Word[] }) {
+  return (
+    <div className="rounded-md border border-[#e6dfd2] bg-[#fdfaf2] px-4 py-5 shadow-[0_1px_0_rgba(0,0,0,0.02)]">
+      <div className="flex items-center gap-2 md:gap-3 overflow-x-auto">
+        {chain.map((w, i) => (
+          <div key={i} className="flex items-center gap-2 md:gap-3">
+            <WordBlock word={w} />
+            {i < chain.length - 1 && (
+              <span className="text-[#c7bda9] text-xl select-none">→</span>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function Index() {
+  const [chains, setChains] = useState<Word[][]>([]);
+
+  const shuffle = useCallback(() => {
+    setChains(generateChains(10, 6));
+  }, []);
+
+  useEffect(() => {
+    shuffle();
+  }, [shuffle]);
+
   return (
     <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
+      className="min-h-screen"
+      style={{
+        backgroundColor: "#faf6ec",
+        fontFamily: "'Zen Kaku Gothic New', sans-serif",
+      }}
     >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+      <div className="mx-auto max-w-5xl px-4 py-8 md:py-12">
+        <header className="flex items-end justify-between gap-4 mb-6 md:mb-10 border-b border-[#e6dfd2] pb-4">
+          <div>
+            <h1
+              className="text-3xl md:text-4xl text-[#2a2622] tracking-wide"
+              style={{ fontFamily: "'Shippori Mincho', serif" }}
+            >
+              しりとり
+            </h1>
+            <p className="text-xs md:text-sm text-[#8a8378] mt-1">
+              N5〜N3 語彙 · 10 本 × 6 語
+            </p>
+          </div>
+          <button
+            onClick={shuffle}
+            className="px-4 py-2 md:px-5 md:py-2.5 text-sm md:text-base rounded-sm border border-[#2a2622] bg-[#2a2622] text-[#faf6ec] hover:bg-[#3d3830] transition-colors"
+            style={{ fontFamily: "'Shippori Mincho', serif" }}
+          >
+            シャッフル
+          </button>
+        </header>
+
+        <main className="grid grid-cols-1 gap-3 md:gap-4">
+          {chains.length === 0 ? (
+            <p className="text-center text-[#8a8378] py-12">生成中…</p>
+          ) : (
+            chains.map((c, i) => <ChainRow key={i} chain={c} />)
+          )}
+        </main>
+
+        <footer className="mt-10 text-center text-xs text-[#a89f8f]">
+          しりとりの規則：末尾の音＝先頭の音、「ん」で終わる語は除外。
+        </footer>
+      </div>
     </div>
   );
 }
