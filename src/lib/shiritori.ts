@@ -69,22 +69,39 @@ function lastChar(w: Word): string {
   return n.charAt(n.length - 1);
 }
 
-// Build index: char → words starting with that char
-const startIndex = new Map<string, Word[]>();
-const usableWords: Word[] = [];
-for (const w of vocab) {
-  const norm = normalizeReading(w.reading);
-  if (!norm) continue;
-  if (norm.endsWith("ん")) {
-    // still add to index as starter, but exclude from chain because ends with ん
-    // We include it as starter only if it doesn't end with ん — skip entirely.
-    continue;
-  }
-  const first = norm.charAt(0);
-  if (!startIndex.has(first)) startIndex.set(first, []);
-  startIndex.get(first)!.push(w);
-  usableWords.push(w);
+// Build index per level set. Key = sorted levels joined.
+type LevelKey = string;
+const startIndexByLevels = new Map<LevelKey, Map<string, Word[]>>();
+const usableWordsByLevels = new Map<LevelKey, Word[]>();
+
+const ALL_LEVELS: Level[] = ["N5", "N4", "N3"];
+
+function levelsKey(levels: Level[]): LevelKey {
+  return [...levels].sort().join(",");
 }
+
+function buildIndexFor(levels: Level[]) {
+  const key = levelsKey(levels);
+  if (startIndexByLevels.has(key)) return key;
+  const set = new Set(levels);
+  const idx = new Map<string, Word[]>();
+  const usable: Word[] = [];
+  for (const w of vocab) {
+    if (!set.has(w.level)) continue;
+    const norm = normalizeReading(w.reading);
+    if (!norm) continue;
+    if (norm.endsWith("ん")) continue;
+    const first = norm.charAt(0);
+    if (!idx.has(first)) idx.set(first, []);
+    idx.get(first)!.push(w);
+    usable.push(w);
+  }
+  startIndexByLevels.set(key, idx);
+  usableWordsByLevels.set(key, usable);
+  return key;
+}
+
+buildIndexFor(ALL_LEVELS);
 
 function pickRandom<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
@@ -98,8 +115,17 @@ function shuffleInPlace<T>(arr: T[]): T[] {
   return arr;
 }
 
-// Generate one chain of `length` words. If `startChar` provided, first word starts with it.
-function generateChain(length: number, maxAttempts = 200, startChar?: string): Word[] | null {
+function generateChain(
+  length: number,
+  maxAttempts: number,
+  startChar: string | undefined,
+  levels: Level[],
+): Word[] | null {
+  const key = buildIndexFor(levels);
+  const startIndex = startIndexByLevels.get(key)!;
+  const usableWords = usableWordsByLevels.get(key)!;
+  if (usableWords.length === 0) return null;
+
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     let firstWord: Word;
     if (startChar) {
@@ -141,20 +167,27 @@ export function normalizeStartInput(raw: string): string | null {
   return n.charAt(0);
 }
 
-export function hasWordsStartingWith(ch: string): boolean {
-  const p = startIndex.get(ch);
+export function hasWordsStartingWith(ch: string, levels: Level[] = ALL_LEVELS): boolean {
+  const key = buildIndexFor(levels);
+  const idx = startIndexByLevels.get(key)!;
+  const p = idx.get(ch);
   return !!p && p.length > 0;
 }
 
-export function generateChains(count: number, chainLength = 6, startChar?: string): Word[][] {
+export function generateChains(
+  count: number,
+  chainLength = 6,
+  startChar?: string,
+  levels: Level[] = ALL_LEVELS,
+): Word[][] {
+  const effectiveLevels = levels.length > 0 ? levels : ALL_LEVELS;
   const chains: Word[][] = [];
   const seenChains = new Set<string>();
   let safety = 0;
   while (chains.length < count && safety < count * 50) {
     safety++;
-    const c = generateChain(chainLength, 200, startChar);
+    const c = generateChain(chainLength, 200, startChar, effectiveLevels);
     if (!c) {
-      // if a startChar is set but no chain possible, bail out
       if (startChar) break;
       continue;
     }
