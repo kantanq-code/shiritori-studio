@@ -22,14 +22,17 @@ const LEVEL_STYLES: Record<Word["level"], string> = {
 
 function WordBlock({ word }: { word: Word }) {
   return (
-    <div className="flex flex-col items-center gap-1.5 min-w-0">
+    <div className="flex flex-col items-center gap-1 min-w-0">
       <span
         className={`px-2 py-0.5 text-[10px] font-semibold tracking-wider rounded-sm border ${LEVEL_STYLES[word.level]}`}
       >
         {word.level}
       </span>
+      <span className="text-[10px] md:text-xs text-[#a89f8f] leading-tight text-center max-w-[7em] line-clamp-2 min-h-[2.2em]">
+        {word.meaning || "\u00A0"}
+      </span>
       <span
-        className="text-2xl md:text-3xl leading-tight text-[#2a2622] whitespace-nowrap"
+        className="text-2xl md:text-3xl leading-tight text-[#2a2622] whitespace-nowrap mt-0.5"
         style={{ fontFamily: "'Shippori Mincho', serif" }}
       >
         {word.reading}
