@@ -62,11 +62,23 @@ function Index() {
   const [chains, setChains] = useState<Word[][]>([]);
   const [startInput, setStartInput] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [selectedLevels, setSelectedLevels] = useState<Level[]>(ALL_LEVELS);
+
+  const toggleLevel = (lv: Level) => {
+    setSelectedLevels((prev) => {
+      const has = prev.includes(lv);
+      if (has) {
+        if (prev.length === 1) return prev; // keep at least one
+        return prev.filter((l) => l !== lv);
+      }
+      return [...prev, lv];
+    });
+  };
 
   const shuffle = useCallback(() => {
     setError(null);
-    setChains(generateChains(10, 6));
-  }, []);
+    setChains(generateChains(10, 6, undefined, selectedLevels));
+  }, [selectedLevels]);
 
   const generateWithStart = useCallback(() => {
     const ch = normalizeStartInput(startInput);
@@ -74,13 +86,13 @@ function Index() {
       setError("開始文字を入力してください。");
       return;
     }
-    if (!hasWordsStartingWith(ch)) {
-      setError(`「${ch}」で始まる語彙が見つかりません。`);
+    if (!hasWordsStartingWith(ch, selectedLevels)) {
+      setError(`「${ch}」で始まる語彙が選択レベルに見つかりません。`);
       return;
     }
     setError(null);
-    setChains(generateChains(10, 6, ch));
-  }, [startInput]);
+    setChains(generateChains(10, 6, ch, selectedLevels));
+  }, [startInput, selectedLevels]);
 
   useEffect(() => {
     shuffle();
