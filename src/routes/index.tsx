@@ -180,6 +180,33 @@ function Index() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2 md:gap-3">
+            <span
+              className="text-xs md:text-sm text-[#6b6459]"
+              style={{ fontFamily: "'Shippori Mincho', serif" }}
+            >
+              音節数：
+            </span>
+            {MORA_OPTIONS.map((opt) => {
+              const active = mora === opt.value;
+              return (
+                <button
+                  key={String(opt.value)}
+                  type="button"
+                  onClick={() => setMora(opt.value)}
+                  className={`px-3 py-1.5 text-xs md:text-sm rounded-sm border transition-colors ${
+                    active
+                      ? "border-[#2a2622] bg-[#2a2622] text-[#faf6ec]"
+                      : "border-[#c7bda9] bg-transparent text-[#6b6459] hover:bg-[#f0e9d8]"
+                  }`}
+                  style={{ fontFamily: "'Shippori Mincho', serif" }}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 md:gap-3">
             <label
               htmlFor="start-char"
               className="text-xs md:text-sm text-[#6b6459]"
