@@ -61,12 +61,21 @@ function normalizeReading(raw: string): string {
   return out.join("");
 }
 
-function firstChar(w: Word): string {
-  return normalizeReading(w.reading).charAt(0);
-}
 function lastChar(w: Word): string {
   const n = normalizeReading(w.reading);
   return n.charAt(n.length - 1);
+}
+
+// Count mora: small kana ゃゅょぁぃぅぇぉ combine with previous; ー is its own mora.
+const SMALL_COMBINING = new Set(["ゃ", "ゅ", "ょ", "ぁ", "ぃ", "ぅ", "ぇ", "ぉ", "ゎ", "ャ", "ュ", "ョ", "ァ", "ィ", "ゥ", "ェ", "ォ", "ヮ"]);
+export function moraCount(reading: string): number {
+  const chars = [...reading];
+  let n = 0;
+  for (const c of chars) {
+    if (SMALL_COMBINING.has(c)) continue;
+    n++;
+  }
+  return n;
 }
 
 // Build index per level set. Key = sorted levels joined.
