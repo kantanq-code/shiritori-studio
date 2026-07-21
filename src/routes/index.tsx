@@ -9,6 +9,14 @@ import {
 
 type Level = Word["level"];
 const ALL_LEVELS: Level[] = ["N5", "N4", "N3"];
+type MoraFilter = "any" | 2 | 3 | 4 | 5;
+const MORA_OPTIONS: { value: MoraFilter; label: string }[] = [
+  { value: "any", label: "全て" },
+  { value: 2, label: "2音" },
+  { value: 3, label: "3音" },
+  { value: 4, label: "4音" },
+  { value: 5, label: "5音" },
+];
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -66,6 +74,7 @@ function Index() {
   const [startInput, setStartInput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [selectedLevels, setSelectedLevels] = useState<Level[]>(ALL_LEVELS);
+  const [mora, setMora] = useState<MoraFilter>("any");
 
   const toggleLevel = (lv: Level) => {
     setSelectedLevels((prev) => {
@@ -80,8 +89,12 @@ function Index() {
 
   const shuffle = useCallback(() => {
     setError(null);
-    setChains(generateChains(10, 6, undefined, selectedLevels));
-  }, [selectedLevels]);
+    const result = generateChains(10, 6, undefined, selectedLevels, mora);
+    setChains(result);
+    if (result.length === 0) {
+      setError("該当する語彙が足りません。条件を緩めてください。");
+    }
+  }, [selectedLevels, mora]);
 
   const generateWithStart = useCallback(() => {
     const ch = normalizeStartInput(startInput);
@@ -89,13 +102,18 @@ function Index() {
       setError("開始文字を入力してください。");
       return;
     }
-    if (!hasWordsStartingWith(ch, selectedLevels)) {
-      setError(`「${ch}」で始まる語彙が選択レベルに見つかりません。`);
+    if (!hasWordsStartingWith(ch, selectedLevels, mora)) {
+      setError(`「${ch}」で始まる語彙が条件に見つかりません。`);
       return;
     }
     setError(null);
-    setChains(generateChains(10, 6, ch, selectedLevels));
-  }, [startInput, selectedLevels]);
+    const result = generateChains(10, 6, ch, selectedLevels, mora);
+    setChains(result);
+    if (result.length === 0) {
+      setError("鎖を作れませんでした。条件を緩めてください。");
+    }
+  }, [startInput, selectedLevels, mora]);
+
 
   useEffect(() => {
     shuffle();
@@ -156,6 +174,33 @@ function Index() {
                   style={{ fontFamily: "'Shippori Mincho', serif" }}
                 >
                   {lv}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 md:gap-3">
+            <span
+              className="text-xs md:text-sm text-[#6b6459]"
+              style={{ fontFamily: "'Shippori Mincho', serif" }}
+            >
+              音節数：
+            </span>
+            {MORA_OPTIONS.map((opt) => {
+              const active = mora === opt.value;
+              return (
+                <button
+                  key={String(opt.value)}
+                  type="button"
+                  onClick={() => setMora(opt.value)}
+                  className={`px-3 py-1.5 text-xs md:text-sm rounded-sm border transition-colors ${
+                    active
+                      ? "border-[#2a2622] bg-[#2a2622] text-[#faf6ec]"
+                      : "border-[#c7bda9] bg-transparent text-[#6b6459] hover:bg-[#f0e9d8]"
+                  }`}
+                  style={{ fontFamily: "'Shippori Mincho', serif" }}
+                >
+                  {opt.label}
                 </button>
               );
             })}
