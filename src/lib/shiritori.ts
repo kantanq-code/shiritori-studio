@@ -85,12 +85,12 @@ const usableWordsByLevels = new Map<LevelKey, Word[]>();
 
 const ALL_LEVELS: Level[] = ["N5", "N4", "N3"];
 
-function levelsKey(levels: Level[]): LevelKey {
-  return [...levels].sort().join(",");
+function levelsKey(levels: Level[], mora: number | "any"): LevelKey {
+  return [...levels].sort().join(",") + "|" + String(mora);
 }
 
-function buildIndexFor(levels: Level[]) {
-  const key = levelsKey(levels);
+function buildIndexFor(levels: Level[], mora: number | "any") {
+  const key = levelsKey(levels, mora);
   if (startIndexByLevels.has(key)) return key;
   const set = new Set(levels);
   const idx = new Map<string, Word[]>();
@@ -100,6 +100,7 @@ function buildIndexFor(levels: Level[]) {
     const norm = normalizeReading(w.reading);
     if (!norm) continue;
     if (norm.endsWith("ん")) continue;
+    if (mora !== "any" && moraCount(w.reading) !== mora) continue;
     const first = norm.charAt(0);
     if (!idx.has(first)) idx.set(first, []);
     idx.get(first)!.push(w);
@@ -110,7 +111,7 @@ function buildIndexFor(levels: Level[]) {
   return key;
 }
 
-buildIndexFor(ALL_LEVELS);
+buildIndexFor(ALL_LEVELS, "any");
 
 function pickRandom<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
@@ -129,8 +130,9 @@ function generateChain(
   maxAttempts: number,
   startChar: string | undefined,
   levels: Level[],
+  mora: number | "any",
 ): Word[] | null {
-  const key = buildIndexFor(levels);
+  const key = buildIndexFor(levels, mora);
   const startIndex = startIndexByLevels.get(key)!;
   const usableWords = usableWordsByLevels.get(key)!;
   if (usableWords.length === 0) return null;
@@ -176,8 +178,12 @@ export function normalizeStartInput(raw: string): string | null {
   return n.charAt(0);
 }
 
-export function hasWordsStartingWith(ch: string, levels: Level[] = ALL_LEVELS): boolean {
-  const key = buildIndexFor(levels);
+export function hasWordsStartingWith(
+  ch: string,
+  levels: Level[] = ALL_LEVELS,
+  mora: number | "any" = "any",
+): boolean {
+  const key = buildIndexFor(levels, mora);
   const idx = startIndexByLevels.get(key)!;
   const p = idx.get(ch);
   return !!p && p.length > 0;
@@ -188,6 +194,7 @@ export function generateChains(
   chainLength = 6,
   startChar?: string,
   levels: Level[] = ALL_LEVELS,
+  mora: number | "any" = "any",
 ): Word[][] {
   const effectiveLevels = levels.length > 0 ? levels : ALL_LEVELS;
   const chains: Word[][] = [];
@@ -195,7 +202,7 @@ export function generateChains(
   let safety = 0;
   while (chains.length < count && safety < count * 50) {
     safety++;
-    const c = generateChain(chainLength, 200, startChar, effectiveLevels);
+    const c = generateChain(chainLength, 200, startChar, effectiveLevels, mora);
     if (!c) {
       if (startChar) break;
       continue;
