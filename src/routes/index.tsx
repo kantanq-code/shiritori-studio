@@ -52,10 +52,73 @@ function WordBlock({ word }: { word: Word }) {
   );
 }
 
-function ChainRow({ chain }: { chain: Word[] }) {
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1200);
+    } catch {
+      // ignore
+    }
+  };
+
   return (
-    <div className="rounded-md border border-[#e6dfd2] bg-[#fdfaf2] px-4 py-5 shadow-[0_1px_0_rgba(0,0,0,0.02)]">
-      <div className="flex items-center gap-2 md:gap-3 overflow-x-auto">
+    <button
+      onClick={handleCopy}
+      className="flex items-center gap-1 px-2 py-1 text-[10px] md:text-xs rounded-sm border border-[#c7bda9] bg-[#fdfaf2] text-[#6b6459] hover:bg-[#f0e9d8] transition-colors"
+      style={{ fontFamily: "'Shippori Mincho', serif" }}
+      aria-label="コピー"
+      title="コピー"
+    >
+      {copied ? (
+        <>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            className="w-3.5 h-3.5"
+          >
+            <path
+              fillRule="evenodd"
+              d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
+              clipRule="evenodd"
+            />
+          </svg>
+          コピー済
+        </>
+      ) : (
+        <>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            className="w-3.5 h-3.5"
+          >
+            <path
+              fillRule="evenodd"
+              d="M15.988 3.012A2.25 2.25 0 0 1 18 5.25v6.5A2.25 2.25 0 0 1 15.75 14H13.5V7.391A2.25 2.25 0 0 0 11.253 5.17L7.68 1.607A2.25 2.25 0 0 0 6.105 1H4.25A2.25 2.25 0 0 0 2 3.25v10.5A2.25 2.25 0 0 0 4.25 16h8.532a2.25 2.25 0 0 0 2.25-2.25V5.25a2.25 2.25 0 0 0-1.012-1.863L15.988 3.012Z"
+              clipRule="evenodd"
+            />
+            <path d="M5.25 3.75H4.5A2.25 2.25 0 0 0 2.25 6v9.75A2.25 2.25 0 0 0 4.5 18H11.25a2.25 2.25 0 0 0 2.25-2.25V14.25H5.25A2.25 2.25 0 0 1 3 12V5.25a2.25 2.25 0 0 1 2.25-2.25h.75V3.75Z" />
+          </svg>
+          コピー
+        </>
+      )}
+    </button>
+  );
+}
+
+function ChainRow({ chain }: { chain: Word[] }) {
+  const kanaText = chain.map((w) => w.reading).join("、");
+  return (
+    <div className="relative rounded-md border border-[#e6dfd2] bg-[#fdfaf2] px-4 py-5 shadow-[0_1px_0_rgba(0,0,0,0.02)]">
+      <div className="absolute top-2 right-2">
+        <CopyButton text={kanaText} />
+      </div>
+      <div className="flex items-center gap-2 md:gap-3 overflow-x-auto pt-6 md:pt-5">
         {chain.map((w, i) => (
           <div key={i} className="flex items-center gap-2 md:gap-3">
             <WordBlock word={w} />
